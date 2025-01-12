@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic Tac Toe</title>
-    <!-- Bootstrap CSS -->
+    <title>Tic Tac Toe Game</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -14,7 +13,7 @@
             height: 100vh;
             background-color: #f8f9fa;
         }
-        .board {
+        .game-board {
             display: grid;
             grid-template-columns: repeat(3, 100px);
             grid-template-rows: repeat(3, 100px);
@@ -26,88 +25,118 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #fff;
-            border: 2px solid #6c757d;
-            font-size: 2rem;
+            background-color: #ffffff;
+            border: 1px solid #ced4da;
+            font-size: 24px;
             font-weight: bold;
             cursor: pointer;
         }
-        .cell:hover {
-            background-color: #e9ecef;
-        }
-        .winner {
-            margin-top: 20px;
-            font-size: 1.5rem;
-            text-align: center;
+        .cell.taken {
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
     <div class="container text-center">
         <h1 class="mb-4">Tic Tac Toe</h1>
-        <div class="board mx-auto"></div>
-        <div class="winner text-success fw-bold"></div>
-        <button id="reset" class="btn btn-primary mt-3">Restart Game</button>
+        <div class="mb-3">
+            <input id="player1" type="text" class="form-control mb-2" placeholder="Enter Player 1 Name">
+            <input id="player2" type="text" class="form-control" placeholder="Enter Player 2 Name">
+        </div>
+        <button id="startGame" class="btn btn-primary mb-3">Start Game</button>
+        <h2 id="currentTurn" class="mb-3">Enter Player Names to Start</h2>
+        <div class="game-board mx-auto"></div>
+        <button id="resetGame" class="btn btn-danger mt-3">Reset Game</button>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const board = document.querySelector('.board');
-        const winnerDisplay = document.querySelector('.winner');
-        const resetButton = document.getElementById('reset');
-        
+        const board = document.querySelector('.game-board');
+        const currentTurnDisplay = document.getElementById('currentTurn');
+        const startGameButton = document.getElementById('startGame');
+        const resetGameButton = document.getElementById('resetGame');
+        const player1Input = document.getElementById('player1');
+        const player2Input = document.getElementById('player2');
+
         let currentPlayer = 'X';
-        let gameState = Array(9).fill(null);
-        const winPatterns = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8],
-            [0, 3, 6], [1, 4, 7], [2, 5, 8],
-            [0, 4, 8], [2, 4, 6]
-        ];
+        let player1Name = '';
+        let player2Name = '';
+        let gameActive = false;
 
         function createBoard() {
+            board.innerHTML = '';
             for (let i = 0; i < 9; i++) {
                 const cell = document.createElement('div');
                 cell.classList.add('cell');
                 cell.dataset.index = i;
-                cell.addEventListener('click', handleCellClick, { once: true });
+                cell.addEventListener('click', handleCellClick);
                 board.appendChild(cell);
             }
         }
 
         function handleCellClick(e) {
+            if (!gameActive) return;
             const cell = e.target;
-            const index = cell.dataset.index;
+            if (cell.classList.contains('taken')) return;
 
-            if (!gameState[index]) {
-                gameState[index] = currentPlayer;
-                cell.textContent = currentPlayer;
-                if (checkWinner()) {
-                    winnerDisplay.textContent = `${currentPlayer} Wins!`;
-                    board.querySelectorAll('.cell').forEach(cell => cell.removeEventListener('click', handleCellClick));
-                } else if (gameState.every(cell => cell)) {
-                    winnerDisplay.textContent = `It's a Tie!`;
-                } else {
-                    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-                }
+            cell.textContent = currentPlayer;
+            cell.classList.add('taken');
+
+            if (checkWinner()) {
+                currentTurnDisplay.textContent = `${currentPlayer === 'X' ? player1Name : player2Name} Wins!`;
+                gameActive = false;
+                return;
             }
+
+            if (Array.from(document.querySelectorAll('.cell')).every(cell => cell.classList.contains('taken'))) {
+                currentTurnDisplay.textContent = 'It's a Draw!';
+                gameActive = false;
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            updateTurnDisplay();
+        }
+
+        function updateTurnDisplay() {
+            currentTurnDisplay.textContent = `${currentPlayer === 'X' ? player1Name : player2Name}'s Turn (${currentPlayer})`;
         }
 
         function checkWinner() {
-            return winPatterns.some(pattern => 
-                pattern.every(index => gameState[index] === currentPlayer)
-            );
+            const winningCombinations = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            const cells = document.querySelectorAll('.cell');
+            return winningCombinations.some(combination => {
+                return combination.every(index => {
+                    return cells[index].textContent === currentPlayer;
+                });
+            });
         }
 
-        resetButton.addEventListener('click', resetGame);
+        startGameButton.addEventListener('click', () => {
+            player1Name = player1Input.value.trim() || 'Player 1';
+            player2Name = player2Input.value.trim() || 'Player 2';
 
-        function resetGame() {
-            gameState.fill(null);
+            if (!player1Name || !player2Name) {
+                alert('Please enter names for both players.');
+                return;
+            }
+
+            gameActive = true;
             currentPlayer = 'X';
-            winnerDisplay.textContent = '';
-            board.innerHTML = '';
+            updateTurnDisplay();
             createBoard();
-        }
+        });
+
+        resetGameButton.addEventListener('click', () => {
+            gameActive = false;
+            currentTurnDisplay.textContent = 'Enter Player Names to Start';
+            player1Input.value = '';
+            player2Input.value = '';
+            createBoard();
+        });
 
         createBoard();
     </script>
