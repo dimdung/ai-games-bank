@@ -9,38 +9,42 @@
     <style>
         body {
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
             background-color: #f8f9fa;
         }
+        .game-container {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+        }
+        .game-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            font-size: 1.2rem;
+        }
         canvas {
             border: 2px solid #6c757d;
             background-color: #fff;
         }
-        .game-container {
-            text-align: center;
-        }
         .player-name {
-            margin-bottom: 10px;
-            font-size: 1.2rem;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
             font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <h1 class="mb-4">Snake Game</h1>
-        <div>
-            <label for="playerName" class="form-label">Enter Player's Name:</label>
-            <input type="text" id="playerName" class="form-control w-50 mx-auto mb-3" placeholder="Your Name">
+        <div class="game-info">
+            <div class="player-name" id="playerName">Player: </div>
+            <div>Score: <span id="score">0</span></div>
+            <button id="startGame" class="btn btn-primary mt-4">Start Game</button>
         </div>
-        <div class="player-name" id="displayPlayerName"></div>
         <canvas id="gameCanvas" width="400" height="400"></canvas>
-        <div class="mt-3">
-            <button id="startGame" class="btn btn-primary">Start Game</button>
-        </div>
     </div>
 
     <!-- Bootstrap JS -->
@@ -48,22 +52,38 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const playerNameInput = document.getElementById('playerName');
-        const displayPlayerName = document.getElementById('displayPlayerName');
+        const scoreDisplay = document.getElementById('score');
+        const playerNameDisplay = document.getElementById('playerName');
         const startGameButton = document.getElementById('startGame');
 
-        let playerName = '';
         let snake = [{ x: 200, y: 200 }];
-        let direction = { x: 10, y: 0 };
-        let food = { x: 100, y: 100 };
+        let direction = { x: 0, y: 0 };
+        let food = { x: 0, y: 0 };
         let score = 0;
         let gameInterval;
 
+        function getPlayerName() {
+            const playerName = prompt("Enter your name:", "Player 1");
+            playerNameDisplay.textContent = `Player: ${playerName || 'Player 1'}`;
+        }
+
+        function spawnFood() {
+            food.x = Math.floor(Math.random() * 20) * 20;
+            food.y = Math.floor(Math.random() * 20) * 20;
+        }
+
         function drawSnake() {
-            ctx.fillStyle = 'green';
-            snake.forEach(part => {
-                ctx.fillRect(part.x, part.y, 10, 10);
+            snake.forEach(segment => {
+                ctx.fillStyle = 'green';
+                ctx.fillRect(segment.x, segment.y, 20, 20);
+                ctx.strokeStyle = 'darkgreen';
+                ctx.strokeRect(segment.x, segment.y, 20, 20);
             });
+        }
+
+        function drawFood() {
+            ctx.fillStyle = 'red';
+            ctx.fillRect(food.x, food.y, 20, 20);
         }
 
         function moveSnake() {
@@ -71,37 +91,22 @@
             snake.unshift(head);
 
             if (head.x === food.x && head.y === food.y) {
-                score++;
-                generateFood();
+                score += 10;
+                scoreDisplay.textContent = score;
+                spawnFood();
             } else {
                 snake.pop();
             }
         }
 
-        function generateFood() {
-            food.x = Math.floor(Math.random() * 40) * 10;
-            food.y = Math.floor(Math.random() * 40) * 10;
-        }
-
-        function drawFood() {
-            ctx.fillStyle = 'red';
-            ctx.fillRect(food.x, food.y, 10, 10);
-        }
-
-        function clearCanvas() {
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
         function checkCollision() {
             const head = snake[0];
-
             if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
                 return true;
             }
 
             for (let i = 1; i < snake.length; i++) {
-                if (head.x === snake[i].x && head.y === snake[i].y) {
+                if (snake[i].x === head.x && snake[i].y === head.y) {
                     return true;
                 }
             }
@@ -109,53 +114,54 @@
             return false;
         }
 
-        function updateGame() {
+        function gameLoop() {
             if (checkCollision()) {
                 clearInterval(gameInterval);
-                alert(`${playerName}, Game Over! Your Score: ${score}`);
+                alert(`Game Over! Your score: ${score}`);
                 resetGame();
                 return;
             }
 
-            clearCanvas();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawSnake();
             drawFood();
             moveSnake();
-            drawSnake();
         }
 
         function resetGame() {
             snake = [{ x: 200, y: 200 }];
-            direction = { x: 10, y: 0 };
+            direction = { x: 0, y: 0 };
             score = 0;
-            generateFood();
+            scoreDisplay.textContent = score;
+            spawnFood();
         }
 
-        document.addEventListener('keydown', (e) => {
+        function startGame() {
+            getPlayerName();
+            resetGame();
+            gameInterval = setInterval(gameLoop, 150);
+        }
+
+        window.addEventListener('keydown', e => {
             switch (e.key) {
                 case 'ArrowUp':
-                    if (direction.y === 0) direction = { x: 0, y: -10 };
+                    if (direction.y === 0) direction = { x: 0, y: -20 };
                     break;
                 case 'ArrowDown':
-                    if (direction.y === 0) direction = { x: 0, y: 10 };
+                    if (direction.y === 0) direction = { x: 0, y: 20 };
                     break;
                 case 'ArrowLeft':
-                    if (direction.x === 0) direction = { x: -10, y: 0 };
+                    if (direction.x === 0) direction = { x: -20, y: 0 };
                     break;
                 case 'ArrowRight':
-                    if (direction.x === 0) direction = { x: 10, y: 0 };
+                    if (direction.x === 0) direction = { x: 20, y: 0 };
                     break;
             }
         });
 
-        startGameButton.addEventListener('click', () => {
-            playerName = playerNameInput.value || 'Player';
-            displayPlayerName.textContent = `Player: ${playerName}`;
-            resetGame();
-            clearInterval(gameInterval);
-            gameInterval = setInterval(updateGame, 100);
-        });
+        startGameButton.addEventListener('click', startGame);
 
-        generateFood();
+        spawnFood();
     </script>
 </body>
 </html>
