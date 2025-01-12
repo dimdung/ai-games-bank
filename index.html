@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f8f9fa;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #fff;
+            border: 2px solid #6c757d;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .cell:hover {
+            background-color: #e9ecef;
+        }
+        .winner {
+            margin-top: 20px;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container text-center">
+        <h1 class="mb-4">Tic Tac Toe</h1>
+        <div class="board mx-auto"></div>
+        <div class="winner text-success fw-bold"></div>
+        <button id="reset" class="btn btn-primary mt-3">Restart Game</button>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const board = document.querySelector('.board');
+        const winnerDisplay = document.querySelector('.winner');
+        const resetButton = document.getElementById('reset');
+        
+        let currentPlayer = 'X';
+        let gameState = Array(9).fill(null);
+        const winPatterns = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        function createBoard() {
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.index = i;
+                cell.addEventListener('click', handleCellClick, { once: true });
+                board.appendChild(cell);
+            }
+        }
+
+        function handleCellClick(e) {
+            const cell = e.target;
+            const index = cell.dataset.index;
+
+            if (!gameState[index]) {
+                gameState[index] = currentPlayer;
+                cell.textContent = currentPlayer;
+                if (checkWinner()) {
+                    winnerDisplay.textContent = `${currentPlayer} Wins!`;
+                    board.querySelectorAll('.cell').forEach(cell => cell.removeEventListener('click', handleCellClick));
+                } else if (gameState.every(cell => cell)) {
+                    winnerDisplay.textContent = `It's a Tie!`;
+                } else {
+                    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                }
+            }
+        }
+
+        function checkWinner() {
+            return winPatterns.some(pattern => 
+                pattern.every(index => gameState[index] === currentPlayer)
+            );
+        }
+
+        resetButton.addEventListener('click', resetGame);
+
+        function resetGame() {
+            gameState.fill(null);
+            currentPlayer = 'X';
+            winnerDisplay.textContent = '';
+            board.innerHTML = '';
+            createBoard();
+        }
+
+        createBoard();
+    </script>
+</body>
+</html>
